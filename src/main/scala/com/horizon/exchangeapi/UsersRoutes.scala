@@ -137,6 +137,7 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
     "orgid/username": {
       "password": "string",
       "admin": false,
+      "hubAdmin": false,
       "email": "string",
       "lastUpdated": "string",
       "updatedBy": "string"
@@ -144,6 +145,7 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
     "orgid/username": {
       "password": "string",
       "admin": false,
+      "hubAdmin": false,
       "email": "string",
       "lastUpdated": "string",
       "updatedBy": "string"
@@ -180,7 +182,7 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
   /* ====== GET /orgs/{orgid}/users/{username} ================================ */
   @GET
   @Path("{username}")
-  @Operation(summary = "Returns a user", description = "Returns the specified username. Can only be run by that user or root.",
+  @Operation(summary = "Returns a user", description = "Returns the specified username. Can only be run by that user or an admin user.",
     parameters = Array(
       new Parameter(name = "orgid", in = ParameterIn.PATH, description = "Organization id."),
       new Parameter(name = "username", in = ParameterIn.PATH, description = "Username of the user.")),
@@ -196,6 +198,7 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
     "orgid/username": {
       "password": "string",
       "admin": false,
+      "hubAdmin": false,
       "email": "string",
       "lastUpdated": "string",
       "updatedBy": "string"
@@ -262,6 +265,7 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
               value = """{
   "password": "abc",
   "admin": false,
+  "hubAdmin": false,
   "email": "me@gmail.com"
 }
 """
@@ -340,6 +344,7 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
             value = """{
   "password": "abc",
   "admin": false,
+  "hubAdmin": false,
   "email": "me@gmail.com"
 }
 """
@@ -397,6 +402,7 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
             value = """{
   "password": "abc",
   "admin": false,
+  "hubAdmin": false,
   "email": "me@gmail.com"
 }
 """
