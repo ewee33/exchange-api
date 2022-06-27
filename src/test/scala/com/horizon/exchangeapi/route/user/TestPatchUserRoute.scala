@@ -218,6 +218,8 @@ class TestPatchUserRoute extends AnyFunSuite with BeforeAndAfterAll with BeforeA
     info("Code: " + response.code)
     info("Body: " + response.body)
     assert(response.code === HttpCode.BAD_INPUT.intValue)
+    val responseBody: ApiResponse = JsonMethods.parse(response.body).extract[ApiResponse]
+    assert(responseBody.msg === ExchMsg.translate("no.valid.user.attr.specified"))
     assertNoChanges(TESTUSERS(2))
   }
 

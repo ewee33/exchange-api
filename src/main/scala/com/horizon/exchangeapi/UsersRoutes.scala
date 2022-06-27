@@ -414,30 +414,36 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
       new responses.ApiResponse(responseCode = "403", description = "access denied"),
       new responses.ApiResponse(responseCode = "404", description = "not found")))
   def userPatchRoute: Route = (path("orgs" / Segment / "users" / Segment) & patch & entity(as[PatchUsersRequest])) { (orgid, username, reqBody) =>
-    logger.debug(s"Doing POST /orgs/$orgid/users/$username")
+    logger.debug(s"Doing PATCH /orgs/$orgid/users/$username")
     val compositeId: String = OrgAndId(orgid, username).toString
     exchAuth(TUser(compositeId), Access.WRITE) { ident =>
+      logger.debug("auth complete")
       validateWithMsg(reqBody.getAnyProblem(ident, orgid, compositeId)) {
+        logger.debug("validate complete")
         complete({
           val updatedBy: String = ident match { case IUser(identCreds) => identCreds.id; case _ => "" }
           val hashedPw: String = if (reqBody.password.isDefined) Password.hash(reqBody.password.get) else "" // hash the pw if that is what is being updated
+          logger.debug("about to get db update")
           val (action, attrName) = reqBody.getDbUpdate(compositeId, orgid, updatedBy, hashedPw)
-          if (action == null) (HttpCode.BAD_INPUT, ApiResponse(ApiRespType.BAD_INPUT, ExchMsg.translate("no.valid.agbot.attr.specified")))
-          db.run(action.transactionally.asTry).map({
-            case Success(n) =>
-              logger.debug("PATCH /orgs/" + orgid + "/users/" + username + " result: " + n)
-              if (n.asInstanceOf[Int] > 0) {
-                if (reqBody.password.isDefined) AuthCache.putUser(compositeId, hashedPw, reqBody.password.get)
-                if (reqBody.admin.isDefined) AuthCache.putUserIsAdmin(compositeId, reqBody.admin.get)
-                (HttpCode.POST_OK, ApiResponse(ApiRespType.OK, ExchMsg.translate("user.attr.updated", attrName, compositeId)))
-              } else {
-                (HttpCode.NOT_FOUND, ApiResponse(ApiRespType.NOT_FOUND, ExchMsg.translate("user.not.found", compositeId)))
-              }
-            case Failure(t: org.postgresql.util.PSQLException) =>
-              ExchangePosgtresErrorHandling.ioProblemError(t, ExchMsg.translate("user.not.updated", t.toString))
-            case Failure(t) =>
-              (HttpCode.BAD_INPUT, ApiResponse(ApiRespType.BAD_INPUT, ExchMsg.translate("user.not.updated", t.toString)))
-          })
+          logger.debug(s"db update done. action = $action")
+          if (action == null) (HttpCode.BAD_INPUT, ApiResponse(ApiRespType.BAD_INPUT, ExchMsg.translate("no.valid.user.attr.specified")))
+          else {
+            db.run(action.transactionally.asTry).map({
+              case Success(n) =>
+                logger.debug("PATCH /orgs/" + orgid + "/users/" + username + " result: " + n)
+                if (n.asInstanceOf[Int] > 0) {
+                  if (reqBody.password.isDefined) AuthCache.putUser(compositeId, hashedPw, reqBody.password.get)
+                  if (reqBody.admin.isDefined) AuthCache.putUserIsAdmin(compositeId, reqBody.admin.get)
+                  (HttpCode.POST_OK, ApiResponse(ApiRespType.OK, ExchMsg.translate("user.attr.updated", attrName, compositeId)))
+                } else {
+                  (HttpCode.NOT_FOUND, ApiResponse(ApiRespType.NOT_FOUND, ExchMsg.translate("user.not.found", compositeId)))
+                }
+              case Failure(t: org.postgresql.util.PSQLException) =>
+                ExchangePosgtresErrorHandling.ioProblemError(t, ExchMsg.translate("user.not.updated", t.toString))
+              case Failure(t) =>
+                (HttpCode.BAD_INPUT, ApiResponse(ApiRespType.BAD_INPUT, ExchMsg.translate("user.not.updated", t.toString)))
+            })
+          }
         }) // end of complete
       } // end of validateWithMsg
     } // end of exchAuth
