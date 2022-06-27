@@ -417,15 +417,11 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
     logger.debug(s"Doing PATCH /orgs/$orgid/users/$username")
     val compositeId: String = OrgAndId(orgid, username).toString
     exchAuth(TUser(compositeId), Access.WRITE) { ident =>
-      logger.debug("auth complete")
       validateWithMsg(reqBody.getAnyProblem(ident, orgid, compositeId)) {
-        logger.debug("validate complete")
         complete({
           val updatedBy: String = ident match { case IUser(identCreds) => identCreds.id; case _ => "" }
           val hashedPw: String = if (reqBody.password.isDefined) Password.hash(reqBody.password.get) else "" // hash the pw if that is what is being updated
-          logger.debug("about to get db update")
           val (action, attrName) = reqBody.getDbUpdate(compositeId, orgid, updatedBy, hashedPw)
-          logger.debug(s"db update done. action = $action")
           if (action == null) (HttpCode.BAD_INPUT, ApiResponse(ApiRespType.BAD_INPUT, ExchMsg.translate("no.valid.user.attr.specified")))
           else {
             db.run(action.transactionally.asTry).map({
