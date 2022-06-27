@@ -66,9 +66,9 @@ final case class PatchUsersRequest(password: Option[String], admin: Option[Boole
     // ensure a regular user can't elevate himself to admin user, or admin user elevate to hub admin
     else if (admin.getOrElse(false) && !ident.isAdmin && !ident.isHubAdmin) Some(ExchMsg.translate("non.admin.user.cannot.make.admin.user"))
     else if (hubAdmin.getOrElse(false) && !ident.isHubAdmin) Some(ExchMsg.translate("only.super.users.make.hub.admins"))
-    // hub admin users have to be in the root org and org admins in a non-root org
+    // hub admin users have to be in the root org and org admins or regular users in a non-root org
     else if (hubAdmin.getOrElse(false) && orgid != "root") Some(ExchMsg.translate("hub.admins.in.root.org"))
-    else if (admin.getOrElse(false) && orgid == "root") Some(ExchMsg.translate("user.cannot.be.in.root.org"))
+    else if (!hubAdmin.getOrElse(false) && orgid == "root") Some(ExchMsg.translate("user.cannot.be.in.root.org"))
     // Hub admins can only modify a user to be a hub admin or admin. This check unfortunately prevents a hub admin from changing the
     // password or email, but those are rarely done, so this is better than no check at all.
     else if (ident.isHubAdmin && !ident.isSuperUser && !hubAdmin.getOrElse(false) && !admin.getOrElse(false)) Some(ExchMsg.translate("hub.admins.only.write.admins"))

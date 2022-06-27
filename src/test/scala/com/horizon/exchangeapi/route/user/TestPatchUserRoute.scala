@@ -318,7 +318,7 @@ class TestPatchUserRoute extends AnyFunSuite with BeforeAndAfterAll with BeforeA
     assertNoChanges(TESTUSERS(2))
   }
 
-  test("PATCH /orgs/root" + ROUTE + "TestPatchUserRouteHubAdmin -- root turns hub admin into a normal user -- 201 OK") {
+  test("PATCH /orgs/root" + ROUTE + "TestPatchUserRouteHubAdmin -- root tries to turn hub admin into a normal user -- 400 bad input") {
     val requestBody: PatchUsersRequest = PatchUsersRequest(
       password = None,
       admin = None,
@@ -328,17 +328,10 @@ class TestPatchUserRoute extends AnyFunSuite with BeforeAndAfterAll with BeforeA
     val response: HttpResponse[String] = Http(URL + "root" + ROUTE + "TestPatchUserRouteHubAdmin").postData(Serialization.write(requestBody)).method("PATCH").headers(ACCEPT).headers(CONTENT).headers(ROOTAUTH).asString
     info("Code: " + response.code)
     info("Body: " + response.body)
-    assert(response.code === HttpCode.POST_OK.intValue)
-    //insure new user is in DB correctly
-    val newUser: UserRow = Await.result(DBCONNECTION.getDb.run(UsersTQ.filter(_.username === TESTUSERS(0).username).result), AWAITDURATION).head
-    assert(newUser.username === TESTUSERS(0).username)
-    assert(newUser.orgid === TESTUSERS(0).orgid)
-    assert(newUser.updatedBy === "root/root") //updated by root
-    assert(newUser.hashedPw === TESTUSERS(0).hashedPw)
-    assert(newUser.admin === TESTUSERS(0).admin)
-    assert(newUser.hubAdmin === requestBody.hubAdmin.get)
-    assert(newUser.email === TESTUSERS(0).email)
-    assert(newUser.lastUpdated > TESTUSERS(0).lastUpdated)
+    assert(response.code === HttpCode.BAD_INPUT.intValue)
+    val responseBody: ApiResponse = JsonMethods.parse(response.body).extract[ApiResponse]
+    assert(responseBody.msg === ExchMsg.translate("user.cannot.be.in.root.org"))
+    assertNoChanges(TESTUSERS(0))
   }
 
   test("PATCH /orgs/" + TESTORGS(0).orgId + ROUTE + "orgAdmin -- hub admin tries to make org admin a regular user -- 400 bad input") {
