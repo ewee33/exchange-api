@@ -169,7 +169,7 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
         val query = if (ident.isHubAdmin && !ident.isSuperUser) UsersTQ.getAllAdmins(orgid) else UsersTQ.getAllUsers(orgid)
         db.run(query.result).map({ list =>
           logger.debug(s"GET /orgs/$orgid/users result size: ${list.size}")
-          val users: Map[String, User] = list.map(e => e.username -> User(if (ident.isSuperUser || ident.isHubAdmin) e.hashedPw else StrConstants.hiddenPw, e.admin, e.hubAdmin, e.email, e.lastUpdated, e.updatedBy)).toMap
+          val users: Map[String, User] = list.map(e => e.username -> User(StrConstants.hiddenPw, e.admin, e.hubAdmin, e.email, e.lastUpdated, e.updatedBy)).toMap
           val code: StatusCode with Serializable = if (users.nonEmpty) StatusCodes.OK else StatusCodes.NotFound
           (code, GetUsersResponse(users, 0))
         })
@@ -228,7 +228,7 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
         val query = if (ident.isHubAdmin && !ident.isSuperUser) UsersTQ.getUserIfAdmin(compositeId) else UsersTQ.getUser(compositeId)
         db.run(query.result).map({ list =>
           logger.debug(s"GET /orgs/$orgid/users/$realUsername result size: ${list.size}")
-          val users: Map[String, User] = list.map(e => e.username -> User(if (ident.isSuperUser || ident.isHubAdmin) e.hashedPw else StrConstants.hiddenPw, e.admin, e.hubAdmin, e.email, e.lastUpdated, e.updatedBy)).toMap
+          val users: Map[String, User] = list.map(e => e.username -> User(StrConstants.hiddenPw, e.admin, e.hubAdmin, e.email, e.lastUpdated, e.updatedBy)).toMap
           val code: StatusCode with Serializable = if (users.nonEmpty) StatusCodes.OK else StatusCodes.NotFound
           (code, GetUsersResponse(users, 0))
         })

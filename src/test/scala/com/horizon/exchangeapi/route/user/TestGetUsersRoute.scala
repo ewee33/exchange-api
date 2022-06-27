@@ -170,15 +170,6 @@ class TestGetUsersRoute extends AnyFunSuite with BeforeAndAfterAll {
   }
 
   def assertUsersEqual(user1: User, user2: UserRow): Unit = {
-    assert(user1.password === user2.hashedPw)
-    assert(user1.admin === user2.admin)
-    assert(user1.hubAdmin === user2.hubAdmin)
-    assert(user1.email === user2.email)
-    assert(user1.lastUpdated === user2.lastUpdated)
-    assert(user1.updatedBy === user2.updatedBy)
-  }
-
-  def assertUsersEqualNoPass(user1: User, user2: UserRow): Unit = {
     assert(user1.password === StrConstants.hiddenPw)
     assert(user1.admin === user2.admin)
     assert(user1.hubAdmin === user2.hubAdmin)
@@ -205,7 +196,7 @@ class TestGetUsersRoute extends AnyFunSuite with BeforeAndAfterAll {
     assert(responseBody.users.isEmpty)
   }
 
-  test("GET /orgs/root" + ROUTE + " -- as root user -- 200 success, all users in root org returned w/ hashed passwords") {
+  test("GET /orgs/root" + ROUTE + " -- as root user -- 200 success, all users in root org returned") {
     val response: HttpResponse[String] = Http(URL + "root" + ROUTE).headers(ACCEPT).headers(ROOTAUTH).asString
     info("Code: " + response.code)
     info("Body: " + response.body)
@@ -217,7 +208,7 @@ class TestGetUsersRoute extends AnyFunSuite with BeforeAndAfterAll {
     assertUsersEqual(responseBody.users(TESTUSERS(0).username), TESTUSERS(0))
   }
 
-  test("GET /orgs/root" + ROUTE + " -- as hub admin -- 200 success, all admins in root org returned w/ hashed passwords") {
+  test("GET /orgs/root" + ROUTE + " -- as hub admin -- 200 success, all admins in root org returned") {
     val response: HttpResponse[String] = Http(URL + "root" + ROUTE).headers(ACCEPT).headers(HUBADMINAUTH).asString
     info("Code: " + response.code)
     info("Body: " + response.body)
@@ -236,7 +227,7 @@ class TestGetUsersRoute extends AnyFunSuite with BeforeAndAfterAll {
     assert(response.code === HttpCode.ACCESS_DENIED.intValue)
   }
 
-  test("GET /orgs/" + TESTORGS(0).orgId + ROUTE + " -- as root -- 200 success, all users in org returned w/ hashed passwords") {
+  test("GET /orgs/" + TESTORGS(0).orgId + ROUTE + " -- as root -- 200 success, all users in org returned") {
     val response: HttpResponse[String] = Http(URL + TESTORGS(0).orgId + ROUTE).headers(ACCEPT).headers(ROOTAUTH).asString
     info("Code: " + response.code)
     info("Body: " + response.body)
@@ -249,7 +240,7 @@ class TestGetUsersRoute extends AnyFunSuite with BeforeAndAfterAll {
     assertUsersEqual(responseBody.users(TESTUSERS(2).username), TESTUSERS(2))
   }
 
-  test("GET /orgs/" + TESTORGS(0).orgId + ROUTE + " -- as hub admin -- 200 success, only admins in org returned w/ hashed passwords") {
+  test("GET /orgs/" + TESTORGS(0).orgId + ROUTE + " -- as hub admin -- 200 success, only admins in org returned") {
     val response: HttpResponse[String] = Http(URL + TESTORGS(0).orgId + ROUTE).headers(ACCEPT).headers(HUBADMINAUTH).asString
     info("Code: " + response.code)
     info("Body: " + response.body)
@@ -260,7 +251,7 @@ class TestGetUsersRoute extends AnyFunSuite with BeforeAndAfterAll {
     assertUsersEqual(responseBody.users(TESTUSERS(1).username), TESTUSERS(1))
   }
 
-  test("GET /orgs/" + TESTORGS(0).orgId + ROUTE + " -- as org admin -- 200 success, all users in org returned w/o passwords") {
+  test("GET /orgs/" + TESTORGS(0).orgId + ROUTE + " -- as org admin -- 200 success, all users in org returned") {
     val response: HttpResponse[String] = Http(URL + TESTORGS(0).orgId + ROUTE).headers(ACCEPT).headers(ORG1ADMINAUTH).asString
     info("Code: " + response.code)
     info("Body: " + response.body)
@@ -269,8 +260,8 @@ class TestGetUsersRoute extends AnyFunSuite with BeforeAndAfterAll {
     assert(responseBody.users.size === 2)
     assert(responseBody.users.contains(TESTUSERS(1).username))
     assert(responseBody.users.contains(TESTUSERS(2).username))
-    assertUsersEqualNoPass(responseBody.users(TESTUSERS(1).username), TESTUSERS(1))
-    assertUsersEqualNoPass(responseBody.users(TESTUSERS(2).username), TESTUSERS(2))
+    assertUsersEqual(responseBody.users(TESTUSERS(1).username), TESTUSERS(1))
+    assertUsersEqual(responseBody.users(TESTUSERS(2).username), TESTUSERS(2))
   }
 
   test("GET /orgs/" + TESTORGS(0).orgId + ROUTE + " -- as user -- 403 access denied") {
