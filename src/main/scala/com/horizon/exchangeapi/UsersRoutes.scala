@@ -429,7 +429,7 @@ trait UsersRoutes extends JacksonSupport with AuthenticationSupport {
                 logger.debug("PATCH /orgs/" + orgid + "/users/" + username + " result: " + n)
                 if (n.asInstanceOf[Int] > 0) {
                   if (reqBody.password.isDefined) AuthCache.putUser(compositeId, hashedPw, reqBody.password.get)
-                  if (reqBody.admin.isDefined) AuthCache.putUserIsAdmin(compositeId, reqBody.admin.get)
+                  else if (reqBody.admin.isDefined) AuthCache.putUserIsAdmin(compositeId, reqBody.admin.get)
                   (HttpCode.POST_OK, ApiResponse(ApiRespType.OK, ExchMsg.translate("user.attr.updated", attrName, compositeId)))
                 } else {
                   (HttpCode.NOT_FOUND, ApiResponse(ApiRespType.NOT_FOUND, ExchMsg.translate("user.not.found", compositeId)))
