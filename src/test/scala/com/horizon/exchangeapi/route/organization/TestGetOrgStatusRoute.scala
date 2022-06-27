@@ -205,20 +205,11 @@ class TestGetOrgStatusRoute extends AnyFunSuite with BeforeAndAfterAll {
     DBCONNECTION.getDb.close()
   }
 
-  //is this intended? I would think this should fail with 404 not found
-  test("GET /orgs/doesNotExist" + ROUTE + " -- success, but returns 0 for everything") {
+  test("GET /orgs/doesNotExist" + ROUTE + " -- 404 NOT FOUND") {
     val response: HttpResponse[String] = Http(URL + "doesNotExist" + ROUTE).headers(ACCEPT).headers(ROOTAUTH).asString
     info("Code: " + response.code)
     info("Body: " + response.body)
-    assert(response.code === HttpCode.OK.intValue)
-    val status: GetOrgStatusResponse = JsonMethods.parse(response.body).extract[GetOrgStatusResponse]
-    assert(status.msg === ExchMsg.translate("exchange.server.operating.normally"))
-    assert(status.numberOfNodes === 0)
-    assert(status.numberOfUsers === 0)
-    assert(status.numberOfNodeMsgs === 0)
-    assert(status.numberOfNodeAgreements === 0)
-    assert(status.numberOfRegisteredNodes === 0)
-    assert(status.SchemaVersion === SCHEMAVERSION)
+    assert(response.code === HttpCode.NOT_FOUND.intValue)
   }
 
   test("GET /orgs/" + TESTORGS(0).orgId + ROUTE + " as root -- normal success") {

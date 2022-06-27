@@ -10,7 +10,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.horizon
 import com.horizon.exchangeapi
-import com.horizon.exchangeapi.auth.{DBProcessingError, IamAccountInfo, IbmCloudAuth}
+import com.horizon.exchangeapi.auth.{DBProcessingError, IamAccountInfo, IbmCloudAuth, ResourceNotFoundException}
 
 import scala.concurrent.ExecutionContext
 import de.heikoseeberger.akkahttpjackson._
@@ -361,7 +361,12 @@ trait OrgsRoutes extends JacksonSupport with AuthenticationSupport {
       complete({
         val statusResp = new OrgStatus()
         //perf: use a DBIO.sequence instead. It does essentially the same thing, but more efficiently
-        db.run(UsersTQ.getAllUsers(orgId).length.result.asTry.flatMap({
+        db.run(OrgsTQ.getOrgid(orgId).exists.result.asTry.flatMap({
+          case Success(orgExists) =>
+            if (orgExists) UsersTQ.getAllUsers(orgId).length.result.asTry
+            else DBIO.failed(new ResourceNotFoundException()).asTry
+          case Failure(t) => DBIO.failed(t).asTry
+        }).flatMap({
           case Success(v) => statusResp.numberOfUsers = v
             NodesTQ.getAllNodes(orgId).length.result.asTry
           case Failure(t) => DBIO.failed(t).asTry
@@ -385,6 +390,8 @@ trait OrgsRoutes extends JacksonSupport with AuthenticationSupport {
           case Success(v) => statusResp.dbSchemaVersion = v.head
             statusResp.msg = ExchMsg.translate("exchange.server.operating.normally")
             (HttpCode.OK, statusResp.toGetOrgStatusResponse)
+          case Failure(t: com.horizon.exchangeapi.auth.ResourceNotFoundException) =>
+            (HttpCode.NOT_FOUND, ApiResponse(ApiRespType.NOT_FOUND, ExchMsg.translate("org.not.found", orgId)))
           case Failure(t: org.postgresql.util.PSQLException) =>
             if (t.getMessage.contains("An I/O error occurred while sending to the backend")) (HttpCode.BAD_GW, statusResp.toGetOrgStatusResponse)
             else (HttpCode.INTERNAL_ERROR, statusResp.toGetOrgStatusResponse)
